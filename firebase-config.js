@@ -1,4 +1,4 @@
-// Configuração do Firebase
+// Configuração do Firebase (do seu projeto)
 const firebaseConfig = {
   apiKey: "AIzaSyC7qg6OppLHwRjni_ZX5HQ7Q5lbIy0rwyc",
   authDomain: "meu-jogo-multiplayer-ceae7.firebaseapp.com",
@@ -10,6 +10,6 @@ const firebaseConfig = {
   measurementId: "G-R1W7EY3LXY"
 };
 
-// Inicializa Firebase
+// Inicializa o Firebase
 firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
+const db = firebase.database();
