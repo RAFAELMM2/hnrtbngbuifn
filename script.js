@@ -1,67 +1,49 @@
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
 const playerId = "player_" + Math.floor(Math.random() * 100000);
 let players = {};
 
-const config = {
-  type: Phaser.AUTO,
-  width: 800,
-  height: 600,
-  backgroundColor: "#1abc9c",
-  physics: {
-    default: "arcade"
-  },
-  scene: {
-    create,
-    update
+const speed = 2;
+let keys = {};
+
+let x = Math.random() * 700 + 50;
+let y = Math.random() * 500 + 50;
+
+// Atualiza posição no Firebase
+const playerRef = db.ref("players/" + playerId);
+playerRef.set({ x, y });
+playerRef.onDisconnect().remove();
+
+// Lê jogadores do banco
+db.ref("players").on("value", (snapshot) => {
+  players = snapshot.val() || {};
+});
+
+// Controle do teclado
+document.addEventListener('keydown', e => keys[e.key] = true);
+document.addEventListener('keyup', e => keys[e.key] = false);
+
+// Loop do jogo
+function gameLoop() {
+  // Movimento
+  if (keys["ArrowLeft"] || keys["a"]) x -= speed;
+  if (keys["ArrowRight"] || keys["d"]) x += speed;
+  if (keys["ArrowUp"] || keys["w"]) y -= speed;
+  if (keys["ArrowDown"] || keys["s"]) y += speed;
+
+  // Atualiza posição no Firebase
+  playerRef.set({ x, y });
+
+  // Desenha jogadores
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for (let id in players) {
+    const p = players[id];
+    ctx.fillStyle = id === playerId ? "lime" : "red";
+    ctx.fillRect(p.x, p.y, 30, 30);
   }
-};
 
-let game = new Phaser.Game(config);
-let cursors;
-let playerRef;
-let playersSprites = {};
-
-function create() {
-  cursors = this.input.keyboard.createCursorKeys();
-
-  // Referência do jogador atual
-  playerRef = database.ref("players/" + playerId);
-  playerRef.set({ x: 100, y: 100 });
-  playerRef.onDisconnect().remove();
-
-  // Escuta todos os jogadores
-  database.ref("players").on("value", snapshot => {
-    const data = snapshot.val() || {};
-
-    // Remove sprites antigos
-    for (let id in playersSprites) {
-      playersSprites[id].destroy();
-    }
-
-    playersSprites = {};
-
-    // Cria novos sprites
-    for (let id in data) {
-      const playerData = data[id];
-      const color = id === playerId ? 0x00ff00 : 0xff0000;
-      playersSprites[id] = this.add.rectangle(playerData.x, playerData.y, 30, 30, color);
-    }
-
-    players = data;
-  });
+  requestAnimationFrame(gameLoop);
 }
 
-function update() {
-  const speed = 3;
-  let p = players[playerId];
-  if (!p) return;
-
-  let x = p.x;
-  let y = p.y;
-
-  if (cursors.left.isDown) x -= speed;
-  if (cursors.right.isDown) x += speed;
-  if (cursors.up.isDown) y -= speed;
-  if (cursors.down.isDown) y += speed;
-
-  database.ref("players/" + playerId).set({ x, y });
-}
+gameLoop();
